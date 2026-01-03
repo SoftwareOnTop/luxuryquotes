@@ -3,8 +3,12 @@ import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Fonts';
 import SettingsSection from '../../components/SettingsSection';
 import SettingsItem from '../../components/SettingsItem';
+import PatronageModal from '../../components/PatronageModal';
+import { useState } from 'react';
 
 export default function SettingsScreen() {
+  const [modalVisible, setModalVisible] = useState(false);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -22,7 +26,12 @@ export default function SettingsScreen() {
         <SettingsSection title="I. Estate & Status">
           <SettingsItem icon="create-outline" title="Legacy Account" subtitle="Personal details & heritage" />
           <SettingsItem icon="shield-checkmark-outline" title="Vault Security" subtitle="Biometric & encryption" />
-          <SettingsItem icon="ribbon-outline" title="The Patronage" subtitle="Elite Membership" />
+          <SettingsItem 
+            icon="ribbon-outline" 
+            title="The Patronage" 
+            subtitle="Elite Membership" 
+            onPress={() => setModalVisible(true)}
+          />
         </SettingsSection>
 
         {/* II. The Daily Discipline */}
@@ -60,6 +69,8 @@ export default function SettingsScreen() {
         </View>
 
       </ScrollView>
+
+      <PatronageModal visible={modalVisible} onClose={() => setModalVisible(false)} />
     </SafeAreaView>
   );
 }

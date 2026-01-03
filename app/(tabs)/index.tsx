@@ -1,6 +1,7 @@
 import { View, FlatList, StyleSheet, Dimensions, ViewToken } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import ReelItem from '../../components/ReelItem';
+import CompassHeader from '../../components/CompassHeader';
 import { useState, useRef } from 'react';
 
 const { height } = Dimensions.get('window');
@@ -28,6 +29,7 @@ const DATA = [
 
 export default function ReelsScreen() {
   const [activeId, setActiveId] = useState(DATA[0].id);
+  const [category, setCategory] = useState('Opulence');
   
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
@@ -41,6 +43,7 @@ export default function ReelsScreen() {
 
   return (
     <View style={styles.container}>
+      <CompassHeader onCategoryChange={setCategory} />
       <FlatList
         data={DATA}
         renderItem={({ item }) => (
@@ -48,7 +51,6 @@ export default function ReelsScreen() {
         )}
         keyExtractor={item => item.id}
         pagingEnabled
-        vertical
         showsVerticalScrollIndicator={false}
         snapToInterval={height - 80} // Adjust based on tab bar
         snapToAlignment="start"
