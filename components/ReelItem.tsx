@@ -1,9 +1,8 @@
-import { ResizeMode, Video } from 'expo-av';
-import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-import { useRef, useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
@@ -21,7 +20,7 @@ const { width, height } = Dimensions.get('window');
 interface ReelItemProps {
   item: {
     id: string;
-    videoUrl: string;
+    imageUrl: string;
     title: string;
     description: string;
   };
@@ -29,8 +28,6 @@ interface ReelItemProps {
 }
 
 export default function ReelItem({ item, isActive }: ReelItemProps) {
-  const video = useRef<Video>(null);
-  const [status, setStatus] = useState({});
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -84,17 +81,11 @@ export default function ReelItem({ item, isActive }: ReelItemProps) {
   return (
     <GestureDetector gesture={doubleTapGesture}>
       <View style={styles.container}>
-        <Video
-          ref={video}
+        <ImageBackground
+          source={{ uri: item.imageUrl }}
           style={styles.video}
-          source={{
-            uri: item.videoUrl,
-          }}
-          useNativeControls={false}
-          resizeMode={ResizeMode.COVER}
-          isLooping
-          shouldPlay={isActive}
-          onPlaybackStatusUpdate={status => setStatus(() => status)}
+          resizeMode="cover"
+          blurRadius={isActive ? 0 : 1}
         />
         
         {/* Grain/Filter Overlay */}
@@ -112,41 +103,27 @@ export default function ReelItem({ item, isActive }: ReelItemProps) {
           <Text style={styles.description}>{item.description}</Text>
         </View>
 
-        <View style={styles.actionsContainer}>
-          {/* Like Button */}
-          <TouchableOpacity style={styles.actionButton} onPress={handleLikePress}>
-            <Ionicons 
-              name={isLiked ? "heart" : "heart-outline"} 
-              size={32} 
-              color={isLiked ? Colors.gold : Colors.cream} 
+        <View style={styles.actionsBar}>
+          <TouchableOpacity style={[styles.pillButton, styles.pillLeft]} onPress={handleBookmarkPress}>
+            <Ionicons
+              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={20}
+              color={isBookmarked ? Colors.gold : Colors.cream}
             />
-            <Text style={styles.actionText}>{isLiked ? "Liked" : "Like"}</Text>
           </TouchableOpacity>
 
-          {/* Bookmark Button */}
-          <TouchableOpacity style={styles.actionButton} onPress={handleBookmarkPress}>
-            <Ionicons 
-              name={isBookmarked ? "bookmark" : "bookmark-outline"} 
-              size={32} 
-              color={isBookmarked ? Colors.gold : Colors.cream} 
+          <TouchableOpacity style={[styles.pillButton, styles.pillCenter]} onPress={handleLikePress}>
+            <Ionicons
+              name={isLiked ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isLiked ? Colors.gold : Colors.cream}
             />
-            <Text style={styles.actionText}>Save</Text>
           </TouchableOpacity>
 
-          {/* Theme Button - Signet Ring */}
-          <TouchableOpacity style={styles.actionButton}>
-            <View style={styles.signetRing}>
-               <Ionicons name="disc-outline" size={24} color={Colors.gold} />
-            </View>
-            <Text style={styles.actionText}>Theme</Text>
-          </TouchableOpacity>
-
-          {/* Share Button - The Wax Seal */}
-          <TouchableOpacity style={styles.actionButton} onPress={handleSharePress}>
-            <Animated.View style={[styles.waxSeal, sealAnimatedStyle]}>
-              <Ionicons name="ribbon" size={24} color="#3e0000" />
+          <TouchableOpacity style={[styles.pillButton, styles.pillRight]} onPress={handleSharePress}>
+            <Animated.View style={sealAnimatedStyle}>
+              <Ionicons name="share-social-outline" size={20} color={Colors.cream} />
             </Animated.View>
-            <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -157,7 +134,7 @@ export default function ReelItem({ item, isActive }: ReelItemProps) {
 const styles = StyleSheet.create({
   container: {
     width: width,
-    height: height - 80, // Adjust for tab bar height roughly
+    height: height,
     backgroundColor: Colors.britishRacingGreen,
     justifyContent: 'center',
     alignItems: 'center',
@@ -184,68 +161,62 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     position: 'absolute',
-    bottom: 40,
-    left: 20,
-    right: 80,
+    top: '40%',
+    left: 24,
+    right: 24,
+    alignItems: 'center',
   },
   title: {
     fontFamily: Fonts.headingBold,
     color: Colors.cream,
-    fontSize: 28,
-    marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
+    fontSize: 30,
+    marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.65)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+    textAlign: 'center',
   },
   description: {
     fontFamily: Fonts.body,
     color: Colors.champagneGold,
     fontSize: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.65)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+    textAlign: 'center',
   },
-  actionsContainer: {
+  actionsBar: {
     position: 'absolute',
-    bottom: 40,
-    right: 10,
+    bottom: 36,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 30,
   },
-  actionButton: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  signetRing: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: Colors.gold,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  waxSeal: {
+  pillButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#800000', // Wax Red
+    borderWidth: 1,
+    borderColor: Colors.gold,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#600000',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.35,
     shadowRadius: 4,
   },
-  actionText: {
-    fontFamily: Fonts.body,
-    color: Colors.cream,
-    fontSize: 10,
-    marginTop: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  pillLeft: {
+    alignSelf: 'flex-end',
+  },
+  pillCenter: {
+    alignSelf: 'center',
+    marginHorizontal: 16,
+  },
+  pillRight: {
+    alignSelf: 'flex-end',
   },
 });

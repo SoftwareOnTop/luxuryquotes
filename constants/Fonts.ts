@@ -4,5 +4,7 @@ export const Fonts = {
   subheading: 'CormorantGaramond_400Regular',
   subheadingItalic: 'CormorantGaramond_400Regular_Italic',
   body: 'LibreCaslonText_400Regular',
+  bodyItalic: 'LibreCaslonText_400Regular_Italic',
   bodyBold: 'LibreCaslonText_700Bold',
+  serif: 'CormorantGaramond_400Regular',
 };

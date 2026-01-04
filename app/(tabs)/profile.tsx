@@ -1,41 +1,73 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Fonts';
 import OakLeafStreak from '../../components/OakLeafStreak';
+import PatronageModal from '../../components/PatronageModal';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 60) / 2;
 
 export default function ProfileScreen() {
+  const [activeTab, setActiveTab] = useState<'collection' | 'journal'>('collection');
+  const [showPatronage, setShowPatronage] = useState(false);
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         
+        {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>The Personal Archive</Text>
-          <Text style={styles.subHeader}>Collected Wisdom</Text>
+          <View style={styles.headerTop}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back-outline" size={22} color={Colors.britishRacingGreen} />
+            </TouchableOpacity>
+            <View style={styles.headerTexts}>
+              <Text style={styles.headerTitle}>The Personal Archive</Text>
+              <Text style={styles.subHeader}>Collected Wisdom</Text>
+            </View>
+            <TouchableOpacity style={styles.editButton}>
+              <Ionicons name="create-outline" size={24} color={Colors.britishRacingGreen} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.streakContainer}>
+            <OakLeafStreak days={12} />
+          </View>
         </View>
 
-        <OakLeafStreak days={5} />
+        {/* Patronage Trigger */}
+        <TouchableOpacity style={styles.patronageButton} onPress={() => setShowPatronage(true)}>
+          <Text style={styles.patronageButtonText}>Become a Patron</Text>
+        </TouchableOpacity>
 
-        {/* The Morning Call - Streak Reminder */}
-        <View style={styles.reminderContainer}>
-          <View style={styles.reminderContent}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.gold} />
-            <View style={styles.reminderTextContainer}>
-              <Text style={styles.reminderTitle}>The Morning Call</Text>
-              <Text style={styles.reminderSubtitle}>Daily discipline reminder</Text>
-            </View>
-          </View>
-          <Ionicons name="toggle" size={32} color={Colors.britishRacingGreen} />
+        {/* Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'collection' && styles.activeTab]}
+            onPress={() => setActiveTab('collection')}
+          >
+            <Text style={[styles.tabText, activeTab === 'collection' && styles.activeTabText]}>
+              The Collection
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'journal' && styles.activeTab]}
+            onPress={() => setActiveTab('journal')}
+          >
+            <Text style={[styles.tabText, activeTab === 'journal' && styles.activeTabText]}>
+              Journal
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* The Curated Gallery - Liked Quotes */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>The Curated Gallery</Text>
           <View style={styles.grid}>
-            {[1, 2, 3, 4].map((item) => (
+            {[1, 2, 3, 4, 5, 6].map((item) => (
               <View key={item} style={styles.gridItem}>
                 <View style={styles.frame}>
                   <View style={styles.placeholderImage}>
@@ -48,26 +80,11 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* The Correspondence - Shared Quotes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>The Correspondence</Text>
-          <View style={styles.correspondenceList}>
-            {[1, 2, 3].map((item) => (
-              <View key={item} style={styles.correspondenceItem}>
-                <View style={styles.letterIcon}>
-                  <Ionicons name="mail-open-outline" size={20} color={Colors.oxblood} />
-                </View>
-                <View style={styles.correspondenceContent}>
-                  <Text style={styles.correspondenceTitle}>To a Friend</Text>
-                  <Text style={styles.correspondenceDate}>October {item}, 1924</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.gold} />
-              </View>
-            ))}
-          </View>
-        </View>
+        <View style={styles.spacer} />
 
       </ScrollView>
+
+      <PatronageModal visible={showPatronage} onClose={() => setShowPatronage(false)} />
     </SafeAreaView>
   );
 }
@@ -75,67 +92,78 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: Colors.cream, // Parchment background
   },
   container: {
     flex: 1,
+    padding: 20,
   },
   header: {
-    padding: 20,
+    marginBottom: 30,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    padding: 8,
+    borderWidth: 1,
+    borderColor: Colors.britishRacingGreen,
+    borderRadius: 20,
+  },
+  headerTexts: {
+    flex: 1,
+    marginHorizontal: 12,
   },
   headerTitle: {
-    fontFamily: Fonts.heading,
+    fontFamily: Fonts.headingBold,
     fontSize: 28,
     color: Colors.britishRacingGreen,
-    marginBottom: 8,
   },
   subHeader: {
-    fontFamily: Fonts.subheadingItalic,
-    fontSize: 18,
-    color: Colors.text.secondary,
-  },
-  reminderContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: Colors.offWhite,
-    borderWidth: 1,
-    borderColor: Colors.gold,
-    borderRadius: 2,
-  },
-  reminderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  reminderTextContainer: {
-    marginLeft: 12,
-  },
-  reminderTitle: {
-    fontFamily: Fonts.bodyBold,
+    fontFamily: Fonts.bodyItalic,
     fontSize: 16,
     color: Colors.oxblood,
+    marginTop: 4,
   },
-  reminderSubtitle: {
+  editButton: {
+    padding: 8,
+    borderWidth: 1,
+    borderColor: Colors.britishRacingGreen,
+    borderRadius: 20,
+  },
+  streakContainer: {
+    alignItems: 'flex-start',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginBottom: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 66, 37, 0.1)',
+  },
+  tab: {
+    marginRight: 32,
+    paddingBottom: 12,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.britishRacingGreen,
+  },
+  tabText: {
     fontFamily: Fonts.body,
-    fontSize: 12,
+    fontSize: 16,
     color: Colors.text.secondary,
+    opacity: 0.6,
+  },
+  activeTabText: {
+    color: Colors.britishRacingGreen,
+    opacity: 1,
+    fontFamily: Fonts.headingBold,
   },
   section: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  sectionTitle: {
-    fontFamily: Fonts.subheadingItalic,
-    fontSize: 22,
-    color: Colors.oxblood,
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212, 175, 55, 0.3)',
-    paddingBottom: 8,
+    marginBottom: 24,
   },
   grid: {
     flexDirection: 'row',
@@ -147,56 +175,52 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   frame: {
-    padding: 8,
-    backgroundColor: '#3d2b1f', // Dark wood frame color
-    borderWidth: 2,
-    borderColor: '#D4AF37', // Gold inner rim
+    width: '100%',
+    aspectRatio: 0.8,
+    backgroundColor: Colors.offWhite,
+    borderWidth: 8,
+    borderColor: '#E0D6C2', // Frame color
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     elevation: 5,
-    marginBottom: 8,
-  },
-  placeholderImage: {
-    width: '100%',
-    height: ITEM_WIDTH * 1.2,
-    backgroundColor: Colors.offWhite,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 12,
+  },
+  placeholderImage: {
+    width: '90%',
+    height: '90%',
+    backgroundColor: '#F0EAD6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   itemTitle: {
     fontFamily: Fonts.body,
     fontSize: 14,
     color: Colors.text.primary,
     textAlign: 'center',
-    marginTop: 4,
   },
-  correspondenceList: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  correspondenceItem: {
-    flexDirection: 'row',
+  patronageButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: Colors.britishRacingGreen,
+    paddingVertical: 16,
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.gold,
+    marginTop: 20,
+    marginBottom: 40,
   },
-  letterIcon: {
-    marginRight: 16,
+  patronageButtonText: {
+    fontFamily: Fonts.heading,
+    color: Colors.britishRacingGreen,
+    fontSize: 14,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
-  correspondenceContent: {
-    flex: 1,
-  },
-  correspondenceTitle: {
-    fontFamily: Fonts.bodyBold,
-    fontSize: 16,
-    color: Colors.text.primary,
-  },
-  correspondenceDate: {
-    fontFamily: Fonts.body,
-    fontSize: 12,
-    color: Colors.text.secondary,
-    fontStyle: 'italic',
+  spacer: {
+    height: 40,
   },
 });
