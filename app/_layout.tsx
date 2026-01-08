@@ -21,12 +21,18 @@ import {
   LibreCaslonText_700Bold,
   LibreCaslonText_400Regular_Italic,
 } from '@expo-google-fonts/libre-caslon-text';
+
+import { AuthProvider, useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/Colors';
+import { useRouter, useSegments } from 'expo-router';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+// Note: SplashScreen calls removed due to Expo Go compatibility issues
+// Expo Go handles splash screen automatically
 
-export default function RootLayout() {
+function InitialLayout() {
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
   const [loaded] = useFonts({
     LibreBaskerville_400Regular,
     LibreBaskerville_700Bold,
@@ -40,13 +46,21 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (loaded && !loading) {
+      // Note: SplashScreen.hideAsync() removed - Expo Go handles this automatically
+      
+      const inTabsGroup = segments[0] === '(tabs)';
+      
+      if (user && segments[0] === 'login') {
+        router.replace('/(tabs)');
+      } else if (!user && inTabsGroup) {
+        router.replace('/login');
+      }
     }
-  }, [loaded]);
+  }, [user, loading, loaded, segments]);
 
-  if (!loaded) {
-    return null;
+  if (!loaded || loading) {
+    return null; 
   }
 
   const MyTheme = {
@@ -60,13 +74,24 @@ export default function RootLayout() {
   };
 
   return (
+    <ThemeProvider value={MyTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="categories" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="visual-folio" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={MyTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </ThemeProvider>
+      <AuthProvider>
+          <InitialLayout />
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }

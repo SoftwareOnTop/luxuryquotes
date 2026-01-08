@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.85;
@@ -57,10 +58,11 @@ export default function PatronageModal({ visible, onClose }: PatronageModalProps
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        
-        {!showSuccess ? (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+          
+          {!showSuccess ? (
             // --- INVITATION STATE ---
             <View style={styles.cardWrapper}>
               <View style={styles.card}>
@@ -235,7 +237,8 @@ export default function PatronageModal({ visible, onClose }: PatronageModalProps
             </View>
         )}
 
-      </View>
+        </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

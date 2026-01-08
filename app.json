@@ -2,6 +2,11 @@
   "expo": {
     "name": "The Heritage",
     "slug": "the-heritage",
+    "owner": "softwareontop",
+    "scheme": [
+      "theheritage",
+      "com.googleusercontent.apps.963320354752-i6qjqctbu6e9i80r1n3ajdfvbmavmklc"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,9 +18,12 @@
       "backgroundColor": "#F5F5DC"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aaron.luxuryquotes",
+      "appleTeamId": "YOUR_APPLE_TEAM_ID"
     },
     "android": {
+      "package": "com.aaron.luxuryquotes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F5F5DC"
@@ -28,7 +36,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
-    ]
+      "expo-font",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7c160680-4b58-47da-80ea-65bd76efbc75"
+      }
+    }
   }
 }

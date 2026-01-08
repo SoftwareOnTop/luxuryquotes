@@ -1,8 +1,7 @@
-import { StyleSheet, View, Text, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, View, Text, Dimensions } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { 
   useSharedValue, 
@@ -11,16 +10,19 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-  runOnJS
+  runOnJS,
+  FadeIn,
+  FadeOut
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
 interface ReelItemProps {
   item: {
     id: string;
-    imageUrl: string;
+    imageUrl?: string;
     title: string;
     description: string;
   };
@@ -28,15 +30,15 @@ interface ReelItemProps {
 }
 
 export default function ReelItem({ item, isActive }: ReelItemProps) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-
-  // Animation values
+  // Animation values for double-tap heart
   const heartScale = useSharedValue(0);
-  const sealScale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withTiming(isActive ? 1 : 0.3, { duration: 300 });
+  }, [isActive]);
 
   const onDoubleTap = useCallback(() => {
-    setIsLiked(true);
     heartScale.value = withSequence(
       withSpring(1),
       withDelay(500, withTiming(0))
@@ -50,82 +52,41 @@ export default function ReelItem({ item, isActive }: ReelItemProps) {
       runOnJS(onDoubleTap)();
     });
 
-  const handleLikePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIsLiked(!isLiked);
-  };
-
-  const handleBookmarkPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setIsBookmarked(!isBookmarked);
-  };
-
-  const handleSharePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    // "Break" the seal animation
-    sealScale.value = withSequence(
-      withTiming(1.2, { duration: 100 }),
-      withTiming(1, { duration: 100 })
-    );
-    // Open share menu logic here
-  };
-
   const heartAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: Math.max(heartScale.value, 0) }],
   }));
 
-  const sealAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: sealScale.value }],
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
   }));
 
   return (
     <GestureDetector gesture={doubleTapGesture}>
       <View style={styles.container}>
-        <ImageBackground
-          source={{ uri: item.imageUrl }}
-          style={styles.video}
-          resizeMode="cover"
-          blurRadius={isActive ? 0 : 1}
-        />
-        
-        {/* Grain/Filter Overlay */}
-        <View style={styles.overlay} />
-
         {/* Big Heart Animation */}
-        <View style={styles.centerHeartContainer}>
+        <View style={styles.centerHeartContainer} pointerEvents="none">
           <Animated.View style={[styles.centerHeart, heartAnimatedStyle]}>
             <Ionicons name="heart" size={100} color={Colors.cream} />
           </Animated.View>
         </View>
 
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.description}>{item.description}</Text>
-        </View>
-
-        <View style={styles.actionsBar}>
-          <TouchableOpacity style={[styles.pillButton, styles.pillLeft]} onPress={handleBookmarkPress}>
-            <Ionicons
-              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={20}
-              color={isBookmarked ? Colors.gold : Colors.cream}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.pillButton, styles.pillCenter]} onPress={handleLikePress}>
-            <Ionicons
-              name={isLiked ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isLiked ? Colors.gold : Colors.cream}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.pillButton, styles.pillRight]} onPress={handleSharePress}>
-            <Animated.View style={sealAnimatedStyle}>
-              <Ionicons name="share-social-outline" size={20} color={Colors.cream} />
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
+        {/* Text Content with Fade Animation */}
+        <Animated.View style={[styles.contentContainer, contentAnimatedStyle]}>
+          <Animated.Text 
+            entering={FadeIn.duration(400)} 
+            exiting={FadeOut.duration(200)}
+            style={styles.title}
+          >
+            {item.title}
+          </Animated.Text>
+          <Animated.Text 
+            entering={FadeIn.duration(400).delay(100)} 
+            exiting={FadeOut.duration(200)}
+            style={styles.description}
+          >
+            {item.description}
+          </Animated.Text>
+        </Animated.View>
       </View>
     </GestureDetector>
   );
@@ -135,23 +96,14 @@ const styles = StyleSheet.create({
   container: {
     width: width,
     height: height,
-    backgroundColor: Colors.britishRacingGreen,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  video: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(66, 37, 0, 0.1)', // Sepia/Warm tint
   },
   centerHeartContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 20,
-    pointerEvents: 'none',
   },
   centerHeart: {
     shadowColor: '#000',
@@ -184,39 +136,5 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 6,
     textAlign: 'center',
-  },
-  actionsBar: {
-    position: 'absolute',
-    bottom: 36,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    zIndex: 30,
-  },
-  pillButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: Colors.gold,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 4,
-  },
-  pillLeft: {
-    alignSelf: 'flex-end',
-  },
-  pillCenter: {
-    alignSelf: 'center',
-    marginHorizontal: 16,
-  },
-  pillRight: {
-    alignSelf: 'flex-end',
   },
 });

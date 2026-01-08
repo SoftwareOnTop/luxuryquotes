@@ -1,4 +1,4 @@
-const DEFAULT_BACKDROP = 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80';
+const DEFAULT_BACKDROP = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
 
 type Listener = (uri: string) => void;
 

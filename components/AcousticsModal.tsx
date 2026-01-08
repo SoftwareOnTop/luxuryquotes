@@ -4,9 +4,9 @@ import { Fonts } from '../constants/Fonts';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
 
@@ -30,33 +30,44 @@ export default function AcousticsModal({
   onAtmosphereChange 
 }: AcousticsModalProps) {
 
-  const handleVolumeChange = (newVolume: number) => {
-    onVolumeChange(newVolume);
-    if (Math.random() > 0.8) { // Don't vibrate on every single frame
-       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
-
   const sliderWidth = width - 80;
   const knobPosition = useSharedValue(currentVolume * sliderWidth);
 
   // Sync knob position when volume changes externally (e.g. initial load)
-  if (visible && Math.abs(knobPosition.value - currentVolume * sliderWidth) > 10) {
-      knobPosition.value = currentVolume * sliderWidth;
-  }
+  useEffect(() => {
+    if (visible) {
+      knobPosition.value = withSpring(currentVolume * sliderWidth, {
+        damping: 20,
+        stiffness: 90,
+      });
+    }
+  }, [visible, currentVolume, sliderWidth]);
 
   const pan = Gesture.Pan()
-    .onUpdate((e) => {
+    .onBegin(() => {
+      // Visual feedback on touch start
+    })
+    .onChange((e) => {
       let newPos = e.x;
       if (newPos < 0) newPos = 0;
       if (newPos > sliderWidth) newPos = sliderWidth;
       knobPosition.value = newPos;
-      runOnJS(handleVolumeChange)(newPos / sliderWidth);
+    })
+    .onEnd(() => {
+      // Update volume only when gesture ends
+      runOnJS(onVolumeChange)(knobPosition.value / sliderWidth);
+      runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
     });
 
   const knobStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: knobPosition.value }],
+    };
+  });
+
+  const fillStyle = useAnimatedStyle(() => {
+    return {
+      width: `${(knobPosition.value / sliderWidth) * 100}%`,
     };
   });
 
@@ -72,14 +83,15 @@ export default function AcousticsModal({
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        
-        <View style={styles.content}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+          
+          <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>The Orchestration</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={Colors.oxblood} />
+              <Ionicons name="close" size={26} color="#000000" />
             </TouchableOpacity>
           </View>
 
@@ -87,7 +99,7 @@ export default function AcousticsModal({
             <Text style={styles.sectionTitle}>Master Volume</Text>
             <View style={styles.sliderContainer}>
               <View style={styles.track} />
-              <View style={[styles.fill, { width: `${currentVolume * 100}%` }]} />
+              <Animated.View style={[styles.fill, fillStyle]} />
               <GestureDetector gesture={pan}>
                 <Animated.View style={[styles.knobContainer, knobStyle]}>
                   <View style={styles.knob} />
@@ -119,9 +131,9 @@ export default function AcousticsModal({
               />
             </View>
           </View>
-
         </View>
-      </View>
+        </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
@@ -131,10 +143,10 @@ function AtmosphereOption({ label, active, onPress, icon }: { label: string, act
     <TouchableOpacity 
       style={[styles.option, active && styles.optionActive]} 
       onPress={onPress}
-      activeOpacity={0.9}
+      activeOpacity={0.8}
     >
       <View style={styles.optionContent}>
-        <Ionicons name={icon} size={20} color={active ? Colors.gold : Colors.oxblood} />
+        <Ionicons name={icon} size={22} color={active ? '#FFFFFF' : '#666666'} />
         <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>{label}</Text>
       </View>
       {active && <View style={styles.activeIndicator} />}
@@ -151,76 +163,72 @@ const styles = StyleSheet.create({
   },
   content: {
     width: width * 0.9,
-    backgroundColor: Colors.cream,
-    borderRadius: 2,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: Colors.gold,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 28,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
     elevation: 10,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 32,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212, 175, 55, 0.3)',
-    paddingBottom: 16,
+    marginBottom: 28,
+    paddingBottom: 0,
   },
   title: {
     fontFamily: Fonts.headingBold,
     fontSize: 24,
-    color: Colors.britishRacingGreen,
+    color: '#000000',
   },
   closeButton: {
     padding: 4,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 28,
   },
   sectionTitle: {
-    fontFamily: Fonts.bodyItalic,
+    fontFamily: Fonts.headingBold,
     fontSize: 16,
-    color: Colors.text.secondary,
-    marginBottom: 16,
+    color: '#000000',
+    marginBottom: 20,
   },
   sliderContainer: {
     height: 40,
     justifyContent: 'center',
   },
   track: {
-    height: 4,
-    backgroundColor: '#E0D8C0',
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
     width: '100%',
     position: 'absolute',
   },
   fill: {
-    height: 4,
-    backgroundColor: Colors.britishRacingGreen,
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: '#000000',
+    borderRadius: 3,
     position: 'absolute',
     left: 0,
   },
   knobContainer: {
     position: 'absolute',
-    left: -15, // Center the 30px knob
+    left: -16,
   },
   knob: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#FDFBF7', // Ivory
-    borderWidth: 1,
-    borderColor: '#D4AF37', // Gold
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 3,
+    borderColor: '#000000',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 4,
   },
   togglesContainer: {
@@ -230,15 +238,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FAF9F6',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 2,
+    padding: 18,
+    backgroundColor: '#FAFAFA',
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    borderRadius: 16,
   },
   optionActive: {
-    backgroundColor: Colors.britishRacingGreen,
-    borderColor: Colors.gold,
+    backgroundColor: '#000000',
+    borderColor: '#000000',
   },
   optionContent: {
     flexDirection: 'row',
@@ -248,16 +256,16 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontFamily: Fonts.body,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: '#333333',
   },
   optionLabelActive: {
-    color: Colors.gold,
-    fontFamily: Fonts.bodyBold,
+    color: '#FFFFFF',
+    fontFamily: Fonts.headingBold,
   },
   activeIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.gold,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
   },
 });

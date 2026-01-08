@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
 import { useState } from 'react';
@@ -17,7 +18,8 @@ import TheReservoir from './TheReservoir';
 import FrequencyMeter from './FrequencyMeter';
 import EngagementProtocol from './EngagementProtocol';
 import TheStreakSaver from './TheStreakSaver';
-import TheChimes, { ReminderItem } from './TheChimes';
+import TheChimesModal from './TheChimesModal';
+import { ReminderItem } from './TheChimesModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +31,7 @@ export default function TemporalProtocolScreen() {
   const [frequency, setFrequency] = useState(5);
   const [engagementMode, setEngagementMode] = useState<'text' | 'app'>('text');
   const [streakSaverActive, setStreakSaverActive] = useState(false);
+  const [chimesModalVisible, setChimesModalVisible] = useState(false);
   const [reminders, setReminders] = useState<ReminderItem[]>([
     { id: '1', time: '09:00', label: 'Morning Wisdom', enabled: true },
     { id: '2', time: '12:00', label: 'Midday Reflection', enabled: true },
@@ -144,18 +147,35 @@ export default function TemporalProtocolScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>VII. The Chimes</Text>
           <View style={styles.divider} />
-          <TheChimes 
-            reminders={reminders}
-            onChange={(updatedReminders: ReminderItem[]) => {
-              setReminders(updatedReminders);
-              Haptics.selectionAsync();
+          <TouchableOpacity 
+            style={styles.chimesButton}
+            onPress={() => {
+              setChimesModalVisible(true);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }}
-          />
+            activeOpacity={0.7}
+          >
+            <View style={styles.chimesButtonLeft}>
+              <Ionicons name="notifications" size={24} color="#000000" />
+              <Text style={styles.chimesButtonText}>Configure Reminders</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={22} color="#666666" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.spacer} />
 
       </ScrollView>
+
+      {/* The Chimes Modal */}
+      <TheChimesModal 
+        visible={chimesModalVisible}
+        onClose={() => setChimesModalVisible(false)}
+        reminders={reminders}
+        onChange={(updatedReminders: ReminderItem[]) => {
+          setReminders(updatedReminders);
+        }}
+      />
 
       {/* Apply Protocols Button */}
       <View style={styles.actionContainer}>
@@ -175,10 +195,10 @@ export default function TemporalProtocolScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: '#F5F5F5',
   },
   header: {
-    backgroundColor: Colors.britishRacingGreen,
+    backgroundColor: '#000000',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 20,
@@ -186,13 +206,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: Fonts.headingBold,
     fontSize: 28,
-    color: Colors.cream,
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   headerSubtitle: {
     fontFamily: Fonts.body,
     fontSize: 14,
-    color: Colors.gold,
+    color: '#CCCCCC',
     letterSpacing: 0.5,
   },
   container: {
@@ -203,54 +223,73 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   section: {
-    marginBottom: 32,
-    backgroundColor: Colors.offWhite,
-    borderRadius: 8,
-    padding: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.gold,
+    marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   sectionTitle: {
     fontFamily: Fonts.headingBold,
-    fontSize: 16,
-    color: Colors.oxblood,
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    fontSize: 17,
+    color: '#000000',
+    marginBottom: 16,
+    letterSpacing: 0,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.gold,
+    backgroundColor: '#E0E0E0',
     marginBottom: 16,
-    opacity: 0.3,
   },
   spacer: {
     height: 40,
   },
+  chimesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  chimesButtonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chimesButtonText: {
+    fontFamily: Fonts.headingBold,
+    fontSize: 15,
+    color: '#000000',
+  },
   actionContainer: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: Colors.cream,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: Colors.gold,
+    borderTopColor: '#E0E0E0',
   },
   applyButton: {
-    backgroundColor: Colors.britishRacingGreen,
-    borderWidth: 2,
-    borderColor: Colors.gold,
-    paddingVertical: 16,
-    borderRadius: 4,
+    backgroundColor: '#000000',
+    paddingVertical: 18,
+    borderRadius: 14,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   applyButtonText: {
     fontFamily: Fonts.headingBold,
-    fontSize: 14,
-    color: Colors.gold,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    fontSize: 16,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 });

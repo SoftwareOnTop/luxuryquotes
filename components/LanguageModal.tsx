@@ -4,7 +4,7 @@ import { Fonts } from '../constants/Fonts';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
 
@@ -38,40 +38,42 @@ export default function LanguageModal({ visible, onClose, currentLanguage, onSel
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Registry of Tongues</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={Colors.oxblood} />
-            </TouchableOpacity>
-          </View>
-
-          <FlatList
-            data={LANGUAGES}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={styles.item} 
-                onPress={() => handleSelect(item.name)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.itemText, item.name === currentLanguage && styles.itemTextActive]}>
-                  {item.name}
-                </Text>
-                {item.name === currentLanguage && (
-                  <Ionicons name="leaf" size={16} color={Colors.gold} />
-                )}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+          
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Registry of Tongues</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Ionicons name="close" size={26} color="#000000" />
               </TouchableOpacity>
-            )}
-            ItemSeparatorComponent={() => <View style={styles.divider} />}
-            contentContainerStyle={styles.listContent}
-          />
+            </View>
 
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={styles.item} 
+                  onPress={() => handleSelect(item.name)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.itemText, item.name === currentLanguage && styles.itemTextActive]}>
+                    {item.name}
+                  </Text>
+                  {item.name === currentLanguage && (
+                    <Ionicons name="checkmark-circle" size={22} color="#000000" />
+                  )}
+                </TouchableOpacity>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.divider} />}
+              contentContainerStyle={styles.listContent}
+            />
+
+          </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
@@ -85,15 +87,14 @@ const styles = StyleSheet.create({
   },
   content: {
     width: width * 0.85,
-    backgroundColor: Colors.cream,
+    backgroundColor: '#FFFFFF',
     paddingVertical: 24,
-    paddingHorizontal: 0, // Full width dividers
-    borderWidth: 1,
-    borderColor: Colors.gold,
+    paddingHorizontal: 0,
+    borderRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
     elevation: 10,
     maxHeight: '70%',
   },
@@ -101,13 +102,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     paddingHorizontal: 24,
   },
   title: {
-    fontFamily: Fonts.heading,
-    fontSize: 22,
-    color: Colors.britishRacingGreen,
+    fontFamily: Fonts.headingBold,
+    fontSize: 24,
+    color: '#000000',
   },
   closeButton: {
     padding: 4,
@@ -119,20 +120,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 20,
+    paddingVertical: 18,
   },
   itemText: {
     fontFamily: Fonts.body,
-    fontSize: 18,
-    color: Colors.text.primary,
+    fontSize: 17,
+    color: '#333333',
   },
   itemTextActive: {
     fontFamily: Fonts.headingBold,
-    color: Colors.britishRacingGreen,
+    color: '#000000',
   },
   divider: {
-    height: 1, // Hairline
-    backgroundColor: Colors.gold,
-    opacity: 0.3,
+    height: 1,
+    backgroundColor: '#E0E0E0',
   },
 });

@@ -36,16 +36,16 @@ export default function TheChimes({ reminders, onChange }: TheChimesProps) {
       <TouchableOpacity 
         style={styles.headerButton} 
         onPress={handleToggle}
-        activeOpacity={0.6}
+        activeOpacity={0.7}
       >
         <View style={styles.headerLeft}>
-          <Ionicons name="notifications-outline" size={22} color={Colors.gold} />
+          <Ionicons name="notifications" size={24} color="#000000" />
           <Text style={styles.headerTitle}>Configure Reminders</Text>
         </View>
         <Ionicons 
           name={isOpen ? "chevron-up" : "chevron-down"} 
-          size={20} 
-          color={Colors.text.secondary} 
+          size={22} 
+          color="#666666" 
         />
       </TouchableOpacity>
 
@@ -61,8 +61,8 @@ export default function TheChimes({ reminders, onChange }: TheChimesProps) {
               <Switch
                 value={item.enabled}
                 onValueChange={() => handleSwitchChange(item.id)}
-                trackColor={{ false: '#e0e0e0', true: Colors.gold }}
-                thumbColor={item.enabled ? '#fff' : '#f4f3f4'}
+                trackColor={{ false: '#e0e0e0', true: '#000000' }}
+                thumbColor={item.enabled ? '#FFFFFF' : '#f4f3f4'}
               />
             </View>
           ))}
@@ -75,16 +75,21 @@ export default function TheChimes({ reminders, onChange }: TheChimesProps) {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   headerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#fff',
+    padding: 20,
+    backgroundColor: '#F5F5F5',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -92,33 +97,34 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerTitle: {
-    fontFamily: Fonts.body,
-    fontSize: 14,
-    color: Colors.text.primary,
+    fontFamily: Fonts.headingBold,
+    fontSize: 16,
+    color: '#000000',
   },
   contentContainer: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+    borderTopColor: 'rgba(0,0,0,0.08)',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    paddingVertical: 12,
   },
   rowInfo: {
     flex: 1,
   },
   timeText: {
     fontFamily: Fonts.headingBold,
-    fontSize: 16,
-    color: Colors.britishRacingGreen,
+    fontSize: 18,
+    color: '#000000',
   },
   labelText: {
     fontFamily: Fonts.body,
-    fontSize: 12,
-    color: Colors.text.secondary,
-    marginTop: 2,
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 4,
   },
 });

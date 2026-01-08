@@ -1,6 +1,17 @@
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Fonts';
+import { Ionicons } from '@expo/vector-icons';
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../config/firebase';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+// Components
 import SettingsSection from '../../components/SettingsSection';
 import SettingsItem from '../../components/SettingsItem';
 import PatronageModal from '../../components/PatronageModal';
@@ -9,24 +20,20 @@ import TemporalProtocolSettings from '../../components/TemporalProtocolSettings'
 import AcousticsModal from '../../components/AcousticsModal';
 import IdentityModal from '../../components/IdentityModal';
 import LanguageModal from '../../components/LanguageModal';
-import { useState, useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-
-const { width } = Dimensions.get('window');
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const [modalVisible, setModalVisible] = useState(false);
-  const [eliteLedgerVisible, setEliteLedgerVisible] = useState(false);
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [identityModalVisible, setIdentityModalVisible] = useState(false);
-  const [acousticsModalVisible, setAcousticsModalVisible] = useState(false);
-  const [chimesModalVisible, setChimesModalVisible] = useState(false);
+  const { user } = useAuth();
 
+  // Modal Visibility States
+  const [patronageVisible, setPatronageVisible] = useState(false);
+  const [eliteLedgerVisible, setEliteLedgerVisible] = useState(false);
+  const [languageVisible, setLanguageVisible] = useState(false);
+  const [identityVisible, setIdentityVisible] = useState(false);
+  const [acousticsVisible, setAcousticsVisible] = useState(false);
+  const [temporalVisible, setTemporalVisible] = useState(false);
+
+  // Settings Values
   const [selectedLanguage, setSelectedLanguage] = useState('English (Oxford)');
   const [selectedIdentity, setSelectedIdentity] = useState('Sir');
   const [volume, setVolume] = useState(0.5);
@@ -60,6 +67,7 @@ export default function SettingsScreen() {
     }
   };
 
+  // Handlers
   const handleLanguageSelect = (language: string) => {
     setSelectedLanguage(language);
     saveSetting('language', language);
@@ -80,65 +88,139 @@ export default function SettingsScreen() {
     saveSetting('atmosphere', newAtmosphere);
   };
 
+  const handleLogout = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut(auth);
+              router.replace('/login');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Generic Alert for placeholder features
+  const showFeatureInfo = (title: string, message: string) => {
+    Alert.alert(title, message, [{ text: 'Understood' }]);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back-outline" size={22} color={Colors.britishRacingGreen} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>The Master Suite</Text>
-          <View style={styles.monogramContainer}>
-            <Text style={styles.monogram}>A.S.</Text>
+          <View style={styles.headerTop}>
+            <Text style={styles.headerTitle}>Settings</Text>
+            <TouchableOpacity 
+              style={styles.logoutButton} 
+              onPress={handleLogout}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
+            </TouchableOpacity>
           </View>
-          <Text style={styles.memberSince}>Member since 1924</Text>
+          <View style={styles.profileCard}>
+            <View style={styles.avatarContainer}>
+              <Ionicons name="person" size={32} color="#000" />
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{user?.email || 'Guest Member'}</Text>
+              <Text style={styles.profileSubtitle}>Premium Estate</Text>
+            </View>
+          </View>
         </View>
 
         {/* I. Estate & Status */}
         <SettingsSection title="I. Estate & Status">
-          <SettingsItem icon="create-outline" title="Legacy Account" subtitle="Personal details & heritage" />
-          <SettingsItem icon="shield-checkmark-outline" title="Vault Security" subtitle="Biometric & encryption" />
+          <SettingsItem 
+            icon="create-outline" 
+            title="Legacy Account" 
+            subtitle="Personal details & heritage"
+            onPress={() => setEliteLedgerVisible(true)}
+          />
+          <SettingsItem 
+            icon="shield-checkmark-outline" 
+            title="Vault Security" 
+            subtitle="Biometric & encryption" 
+            onPress={() => showFeatureInfo('Vault Security', 'Your digital vault is secured with biometric encryption.')}
+          />
           <SettingsItem 
             icon="ribbon-outline" 
             title="The Patronage" 
             subtitle="Manage Subscription" 
-            onPress={() => setModalVisible(true)}
+            onPress={() => setPatronageVisible(true)}
           />
         </SettingsSection>
 
         {/* II. The Daily Discipline */}
         <SettingsSection title="II. The Daily Discipline">
-          <SettingsItem icon="hourglass-outline" title="Daily Practice" subtitle="Routines & goals" />
+          <SettingsItem 
+            icon="hourglass-outline" 
+            title="Daily Practice" 
+            subtitle="Routines & goals" 
+            onPress={() => showFeatureInfo('Daily Practice', 'Track your daily streaks and wisdom in your Profile.')}
+          />
           <SettingsItem 
             icon="musical-notes-outline" 
             title="Acoustics" 
             subtitle="The Orchestration" 
-            onPress={() => setAcousticsModalVisible(true)}
+            onPress={() => {
+              console.log('Opening Acoustics Modal');
+              setAcousticsVisible(true);
+            }}
           />
           <SettingsItem 
             icon="globe-outline" 
             title="Native Tongue" 
             subtitle={selectedLanguage} 
-            onPress={() => setLanguageModalVisible(true)}
+            onPress={() => {
+              console.log('Opening Language Modal');
+              setLanguageVisible(true);
+            }}
           />
           <SettingsItem 
             icon="person-circle-outline" 
             title="Identity" 
             subtitle={selectedIdentity} 
-            onPress={() => setIdentityModalVisible(true)}
+            onPress={() => {
+              console.log('Opening Identity Modal');
+              setIdentityVisible(true);
+            }}
           />
         </SettingsSection>
 
         {/* III. Governance & Focus */}
         <SettingsSection title="III. Governance & Focus">
-          <SettingsItem icon="notifications-off-outline" title="The Silence" subtitle="Muted content" />
+          <SettingsItem 
+            icon="notifications-off-outline" 
+            title="The Silence" 
+            subtitle="Muted content" 
+            onPress={() => showFeatureInfo('The Silence', 'Content filters are currently active.')}
+          />
           <SettingsItem 
             icon="time-outline" 
             title="The Chimes" 
-            subtitle="Reminders" 
-            onPress={() => setChimesModalVisible(true)}
+            subtitle="Reminders & Protocols" 
+            onPress={() => {
+              console.log('Opening Chimes Modal');
+              setTemporalVisible(true);
+            }}
           />
         </SettingsSection>
 
@@ -148,43 +230,60 @@ export default function SettingsScreen() {
 
       </ScrollView>
 
-      <PatronageModal visible={modalVisible} onClose={() => setModalVisible(false)} />
-      <TheEliteLedgerModal visible={eliteLedgerVisible} onClose={() => setEliteLedgerVisible(false)} />
+      {/* Modals */}
+      <PatronageModal 
+        visible={patronageVisible} 
+        onClose={() => setPatronageVisible(false)} 
+      />
+      
+      <TheEliteLedgerModal 
+        visible={eliteLedgerVisible} 
+        onClose={() => setEliteLedgerVisible(false)} 
+      />
+      
       <AcousticsModal 
-        visible={acousticsModalVisible} 
-        onClose={() => setAcousticsModalVisible(false)}
+        visible={acousticsVisible} 
+        onClose={() => setAcousticsVisible(false)}
         currentVolume={volume}
         currentAtmosphere={atmosphere}
         onVolumeChange={handleVolumeChange}
         onAtmosphereChange={handleAtmosphereChange}
       />
+      
       <IdentityModal 
-        visible={identityModalVisible} 
-        onClose={() => setIdentityModalVisible(false)}
+        visible={identityVisible} 
+        onClose={() => setIdentityVisible(false)}
         currentIdentity={selectedIdentity}
         onSelect={handleIdentitySelect}
       />
+      
       <LanguageModal 
-        visible={languageModalVisible} 
-        onClose={() => setLanguageModalVisible(false)}
+        visible={languageVisible} 
+        onClose={() => setLanguageVisible(false)}
         currentLanguage={selectedLanguage}
         onSelect={handleLanguageSelect}
       />
 
-      {/* Chimes Modal */}
-      <Modal visible={chimesModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>The Chimes</Text>
-              <TouchableOpacity onPress={() => setChimesModalVisible(false)}>
-                <Ionicons name="close" size={24} color={Colors.oxblood} />
-              </TouchableOpacity>
+      {/* Temporal Protocol (The Chimes) Modal */}
+      <Modal 
+        visible={temporalVisible} 
+        animationType="slide" 
+        transparent={true}
+        onRequestClose={() => setTemporalVisible(false)}
+      >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>The Chimes</Text>
+                <TouchableOpacity onPress={() => setTemporalVisible(false)}>
+                  <Ionicons name="close" size={26} color="#000000" />
+                </TouchableOpacity>
+              </View>
+              <TemporalProtocolSettings onClose={() => setTemporalVisible(false)} />
             </View>
-
-            <TemporalProtocolSettings onClose={() => setChimesModalVisible(false)} />
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
 
     </SafeAreaView>
@@ -194,7 +293,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
@@ -203,51 +302,59 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 20,
+    padding: 24,
+    backgroundColor: '#FFFFFF',
   },
-  backButton: {
-    position: 'absolute',
-    left: 20,
-    top: 20,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: Colors.britishRacingGreen,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.8)',
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
   },
   headerTitle: {
     fontFamily: Fonts.headingBold,
-    fontSize: 28,
-    color: Colors.britishRacingGreen,
-    marginBottom: 16,
+    fontSize: 32,
+    color: '#000000',
   },
-  monogramContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 2,
-    borderColor: Colors.gold,
-    justifyContent: 'center',
+  logoutButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: '#FFF5F5',
+  },
+  profileCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.offWhite,
-    marginBottom: 12,
+    padding: 20,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  monogram: {
+  avatarContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#E8E8E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
     fontFamily: Fonts.headingBold,
-    fontSize: 32,
-    color: Colors.oxblood,
+    fontSize: 18,
+    color: '#000000',
+    marginBottom: 4,
   },
-  memberSince: {
-    fontFamily: Fonts.bodyItalic,
+  profileSubtitle: {
+    fontFamily: Fonts.body,
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: '#888888',
   },
   footer: {
     padding: 20,
@@ -265,11 +372,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    backgroundColor: Colors.cream,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: '#F5F5F5',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 24,
-    height: '90%', // Give it more height for the complex settings
+    height: '90%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.2,
@@ -280,109 +387,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   modalTitle: {
-    fontFamily: Fonts.subheadingItalic,
+    fontFamily: Fonts.headingBold,
     fontSize: 24,
-    color: Colors.oxblood,
-  },
-  languageList: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  languageItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    width: '100%',
-    justifyContent: 'center',
-  },
-  languageText: {
-    fontFamily: Fonts.body,
-    fontSize: 18,
-    color: Colors.text.primary,
-  },
-  selectedLanguageText: {
-    fontFamily: Fonts.headingBold,
-    color: Colors.britishRacingGreen,
-    textDecorationLine: 'underline',
-    textDecorationColor: Colors.gold,
-  },
-  sealIcon: {
-    marginLeft: 8,
-  },
-  confirmButton: {
-    borderWidth: 1,
-    borderColor: Colors.gold,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 'auto',
-  },
-  confirmButtonText: {
-    fontFamily: Fonts.heading,
-    fontSize: 16,
-    color: Colors.britishRacingGreen,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  identityContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-  },
-  identityOption: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 1,
-    borderColor: Colors.text.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectedIdentityOption: {
-    backgroundColor: Colors.britishRacingGreen,
-    borderColor: Colors.gold,
-  },
-  identityText: {
-    fontFamily: Fonts.body,
-    fontSize: 14,
-    color: Colors.text.primary,
-  },
-  selectedIdentityText: {
-    color: Colors.gold,
-    fontFamily: Fonts.headingBold,
-  },
-  acousticsContainer: {
-    marginTop: 20,
-  },
-  volumeLabel: {
-    fontFamily: Fonts.body,
-    fontSize: 16,
-    color: Colors.text.primary,
-    marginBottom: 16,
-  },
-  sliderTrack: {
-    height: 2,
-    backgroundColor: Colors.text.secondary,
-    width: '100%',
-    position: 'relative',
-  },
-  sliderFill: {
-    height: 2,
-    backgroundColor: Colors.gold,
-    position: 'absolute',
-    left: 0,
-  },
-  sliderThumb: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: Colors.cream,
-    borderWidth: 2,
-    borderColor: Colors.gold,
-    position: 'absolute',
-    top: -7,
-    marginLeft: -8,
+    color: '#000000',
   },
 });

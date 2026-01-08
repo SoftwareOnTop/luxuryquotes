@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,61 +8,67 @@ import {
   StatusBar,
   FlatList,
   TextInput,
-  Image,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
-import { setBackdrop } from '../constants/BackdropStore';
 import { useRouter } from 'expo-router';
+import { setQuoteCategory, QuoteCategory, CATEGORY_META } from '../constants/QuoteStore';
+import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 const GRID_GAP = 12;
-const CARD_SIZE = (width - 16 * 2 - GRID_GAP) / 2; // 2 per row
+const CARD_SIZE = (width - 16 * 2 - GRID_GAP * 3) / 4; // 4 per row
 
-const CATEGORIES = [
-  { id: 'heritage', title: 'Heritage', tags: ['legacy', 'classic'], img: 'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&w=800&q=80' },
-  { id: 'atelier', title: 'Atelier', tags: ['craft', 'stone'], img: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80' },
-  { id: 'harbor', title: 'Harbor', tags: ['calm', 'blue'], img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' },
-  { id: 'canopy', title: 'Canopy', tags: ['green', 'forest'], img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80&sat=-20' },
-  { id: 'vault', title: 'Vault', tags: ['dark', 'metal'], img: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80&sharp=50' },
-  { id: 'nocturne', title: 'Nocturne', tags: ['midnight', 'minimal'], img: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80&sat=-30' },
-];
-
-const CHIPS = ['all', 'legacy', 'green', 'blue', 'dark', 'minimal', 'craft'];
+type FilterType = 'all' | 'popular' | 'trending';
 
 export default function CategoriesScreen() {
-  const [selectedId, setSelectedId] = useState(CATEGORIES[0].id);
-  const [query, setQuery] = useState('');
-  const [chip, setChip] = useState('all');
+  const [selectedId, setSelectedId] = useState<QuoteCategory>(CATEGORY_META[0].id);
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [search, setSearch] = useState('');
   const router = useRouter();
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return CATEGORIES.filter((c) => {
-      const matchesText = !q || c.title.toLowerCase().includes(q) || c.tags.some((t) => t.includes(q));
-      const matchesChip = chip === 'all' || c.tags.includes(chip);
-      return matchesText && matchesChip;
-    });
-  }, [query, chip]);
+  const filteredCategories = useMemo(() => {
+    let result = CATEGORY_META;
 
-  const renderItem = ({ item }: { item: (typeof CATEGORIES)[number] }) => {
+    // Apply search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(cat => 
+        cat.title.toLowerCase().includes(q) || 
+        cat.tags.some(tag => tag.toLowerCase().includes(q))
+      );
+    }
+
+    // Apply filter
+    if (filter !== 'all') {
+      result = result.filter(cat => cat.tags.includes(filter));
+    }
+
+    return result;
+  }, [search, filter]);
+
+  const handleSelect = (id: QuoteCategory) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedId(id);
+    setQuoteCategory(id);
+  };
+
+const renderItem = ({ item }: { item: typeof CATEGORY_META[number] }) => {
     const active = item.id === selectedId;
     return (
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => {
-          setSelectedId(item.id);
-          setBackdrop(item.img);
-        }}
+        onPress={() => handleSelect(item.id)}
         style={[styles.card, active && styles.cardActive]}
       >
-        <Image source={{ uri: item.img }} style={styles.thumb} />
-        <View style={styles.cardFooter}>
-          <Text numberOfLines={1} style={styles.cardTitle}>{item.title}</Text>
-          {active && <Ionicons name="checkmark-circle" size={16} color={Colors.gold} />}
+        <View style={styles.iconCircle}>
+          <Ionicons name={item.icon as any} size={24} color={active ? '#000000' : '#888888'} />
         </View>
+        <Text numberOfLines={2} style={[styles.cardTitle, active && styles.cardTitleActive]}>
+          {item.title}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -72,52 +78,70 @@ export default function CategoriesScreen() {
       <StatusBar barStyle="dark-content" />
 
       <View style={styles.header}>
-        <Text style={styles.title}>THE CATEGORIES</Text>
-        <Text style={styles.subtitle}>Curated sets of luxury moods</Text>
+        <Text style={styles.title}>THE THEMES</Text>
+        <Text style={styles.subtitle}>Select your quote collection</Text>
       </View>
 
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={16} color={Colors.champagneGold} />
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={16} color="#8A8A8A" style={styles.searchIcon} />
         <TextInput
-          placeholder="Search categories..."
-          placeholderTextColor="#8A8A8A"
-          value={query}
-          onChangeText={setQuery}
+          placeholder="Search themes..."
+          placeholderTextColor="#A0A0A0"
+          value={search}
+          onChangeText={setSearch}
           style={styles.searchInput}
         />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={18} color="#A0A0A0" />
+          </TouchableOpacity>
+        )}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-        {CHIPS.map((c) => {
-          const active = chip === c;
-          return (
-            <TouchableOpacity key={c} onPress={() => setChip(c)} style={[styles.chip, active && styles.chipActive]}>
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{c}</Text>
-            </TouchableOpacity>
-          );
-        })}
+      {/* Filter Pills */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        contentContainerStyle={styles.filterRow}
+      >
+        {(['all', 'popular', 'trending'] as FilterType[]).map((f) => (
+          <TouchableOpacity
+            key={f}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setFilter(f);
+            }}
+            style={[styles.filterPill, filter === f && styles.filterPillActive]}
+          >
+            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+              {f === 'all' ? 'All Themes' : f === 'popular' ? 'Most Popular' : 'Trending'}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
 
+      {/* Grid */}
       <FlatList
-        data={filtered}
+        data={filteredCategories}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        numColumns={2}
-        columnWrapperStyle={{ gap: GRID_GAP, marginBottom: GRID_GAP }}
+        numColumns={4}
+        columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
 
+      {/* Apply Button */}
       <TouchableOpacity
         style={styles.applyButton}
         activeOpacity={0.9}
         onPress={() => {
-          const chosen = CATEGORIES.find((c) => c.id === selectedId);
-          if (chosen) setBackdrop(chosen.img);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.back();
         }}
       >
-        <Text style={styles.applyText}>Return to Reels</Text>
+        <Text style={styles.applyText}>Apply & Return</Text>
       </TouchableOpacity>
     </View>
   );
@@ -126,115 +150,138 @@ export default function CategoriesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.cream,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
   },
   title: {
     fontFamily: Fonts.headingBold,
-    color: Colors.text.primary,
+    color: '#000000',
     letterSpacing: 2,
-    fontSize: 18,
+    fontSize: 20,
   },
   subtitle: {
     marginTop: 6,
     fontFamily: Fonts.body,
-    color: '#5F5F5F',
-    fontSize: 13,
+    color: '#888888',
+    fontSize: 14,
   },
-  searchBar: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: Colors.champagneGold,
-    backgroundColor: '#F9F7F2',
-    paddingHorizontal: 10,
-    height: 40,
+    marginHorizontal: 24,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    height: 50,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+  },
+  searchIcon: {
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 8,
+    fontFamily: Fonts.body,
+    fontSize: 15,
+    color: '#000000',
+  },
+  filterRow: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    gap: 10,
+  },
+  filterPill: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+  },
+  filterPillActive: {
+    backgroundColor: '#000000',
+  },
+  filterText: {
     fontFamily: Fonts.body,
     fontSize: 13,
-    color: Colors.text.primary,
+    color: '#666666',
+    letterSpacing: 0.5,
   },
-  chipRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#D8D2C5',
-    backgroundColor: '#F1EDE2',
-    marginRight: 8,
-  },
-  chipActive: {
-    borderColor: Colors.gold,
-    backgroundColor: '#FFFDF7',
-  },
-  chipText: {
-    fontFamily: Fonts.body,
-    fontSize: 12,
-    color: '#6B6455',
-    textTransform: 'capitalize',
-  },
-  chipTextActive: {
-    color: Colors.text.primary,
+  filterTextActive: {
+    color: '#FFFFFF',
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 120,
+  },
+  gridRow: {
+    gap: GRID_GAP,
+    marginBottom: GRID_GAP,
   },
   card: {
     width: CARD_SIZE,
-    height: CARD_SIZE + 30,
-    backgroundColor: Colors.offWhite,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#E0DACF',
-    overflow: 'hidden',
-    justifyContent: 'space-between',
+    height: CARD_SIZE + 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    // Modern Shadow
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   cardActive: {
-    borderColor: Colors.gold,
+    backgroundColor: '#F8F8F8',
+    borderColor: '#000',
+    borderWidth: 1.5,
   },
-  thumb: {
-    width: '100%',
-    height: CARD_SIZE,
-  },
-  cardFooter: {
-    flexDirection: 'row',
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F2F2F2',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    marginBottom: 10,
   },
   cardTitle: {
+    fontFamily: Fonts.body,
+    fontSize: 11,
+    color: '#333333',
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  cardTitleActive: {
     fontFamily: Fonts.headingBold,
-    fontSize: 12,
-    color: Colors.text.primary,
+    color: '#000000',
   },
   applyButton: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    backgroundColor: Colors.britishRacingGreen,
-    borderRadius: 10,
-    paddingVertical: 14,
+    position: 'absolute',
+    bottom: 40,
+    left: 40,
+    right: 40,
+    backgroundColor: '#000000',
+    borderRadius: 30, // Totally rounded
+    paddingVertical: 18,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
   applyText: {
     fontFamily: Fonts.headingBold,
     color: '#FFFFFF',
     letterSpacing: 1,
-    fontSize: 13,
+    fontSize: 14,
   },
 });

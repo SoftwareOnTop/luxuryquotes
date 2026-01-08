@@ -12,7 +12,6 @@ export default function SettingsSection({ title, children }: SettingsSectionProp
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
-        <View style={styles.line} />
       </View>
       <View style={styles.content}>
         {children}
@@ -23,27 +22,33 @@ export default function SettingsSection({ title, children }: SettingsSectionProp
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: 32,
+    paddingHorizontal: 20,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 8,
+    paddingHorizontal: 4,
+    marginBottom: 12,
   },
   title: {
-    fontFamily: Fonts.subheadingItalic,
-    color: Colors.oxblood,
-    fontSize: 18,
-    marginRight: 12,
+    fontFamily: Fonts.headingBold,
+    color: '#1A1A1A',
+    fontSize: 20,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.gold,
-    opacity: 0.5,
+    backgroundColor: 'transparent',
   },
   content: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)', // Slight transparency for paper effect
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    overflow: 'hidden',
   },
 });
